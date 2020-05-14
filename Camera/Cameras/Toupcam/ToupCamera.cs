@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Ncer.Camera;
 using ToupTek;
 
-namespace Ncer.Camera.Toupcam
+namespace Ncer.Camera
 {
 
     public enum ToupCamera_Status
@@ -43,7 +43,9 @@ namespace Ncer.Camera.Toupcam
 
         public override double MinExposure => this.minExpo;
         public override double MaxExposure => this.maxExpo;
-
+        /// <summary>
+        /// 曝光时间
+        /// </summary>
         public override double ExposureTime
         {
             get
@@ -68,14 +70,24 @@ namespace Ncer.Camera.Toupcam
                 }
             }
         }
+        /// <summary>
+        /// 像素尺寸
+        /// </summary>
         public override PixelSize PixelSize { get => this.getPixelSize(); protected set => this.pixelSize=value; }
+        /// <summary>
+        /// 是否已经启动
+        /// </summary>
         public override bool IsStarted { get => this.isStarted; protected set => this.isStarted=value; }
+        /// <summary>
+        /// 是否支持抓拍
+        /// </summary>
         public bool StillSupported { get => stillSupported; set => stillSupported = value; }
 
         #region  event
 
         public override event CameraEventHandler OnCameraEvent;
         public override event CameraPreviewFrameHandler OnCameraPreviewEvent;
+        public override event CameraChangeHandler OnCameraStateChanged;
         #endregion
         #region private 
         private PixelSize getPixelSize()
@@ -117,6 +129,7 @@ namespace Ncer.Camera.Toupcam
                 case ToupCam.eEVENT.EVENT_ERROR:
                     break;
                 case ToupCam.eEVENT.EVENT_DISCONNECTED:
+                    OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ConnectionError });
                     break;
                 case ToupCam.eEVENT.EVENT_TIMEOUT:
                     break;
@@ -169,7 +182,10 @@ namespace Ncer.Camera.Toupcam
 
         #endregion
         #region 生命周期与运行状态
-
+        /// <summary>
+        /// 初始化
+        /// </summary>
+        /// <returns></returns>
         public override bool Init()
         {
             bool r = false;
@@ -295,13 +311,20 @@ namespace Ncer.Camera.Toupcam
                 return false;
             }
         }
-
+        /// <summary>
+        /// 设置相机模式
+        /// </summary>
+        /// <param name="cameraMode"></param>
+        /// <returns></returns>
         public override bool SetCameraMode(CameraMode cameraMode)
         {
             this.cameraMode = cameraMode;
             return true;
         }
-
+        /// <summary>
+        /// 关闭相机
+        /// </summary>
+        /// <returns></returns>
         public override bool Close()
         {
             try
@@ -321,12 +344,18 @@ namespace Ncer.Camera.Toupcam
             }
             return true;
         }
-
+        /// <summary>
+        /// 查询相机模式
+        /// </summary>
+        /// <returns></returns>
         public override CameraMode GetCameraMode()
         {
             return this.cameraMode;
         }
-
+        /// <summary>
+        /// 启动相机
+        /// </summary>
+        /// <returns></returns>
         public override bool Start()
         {
             if (camera == null) return false;
@@ -348,7 +377,10 @@ namespace Ncer.Camera.Toupcam
             }
             return true;
         }
-
+        /// <summary>
+        /// 停止相机
+        /// </summary>
+        /// <returns></returns>
         public override bool Stop()
         {
             if (camera == null)
@@ -527,9 +559,6 @@ namespace Ncer.Camera.Toupcam
             this.cameraMode = CameraMode.Preview;
             return true;
         }
-
-        
-
         public override bool StopPreview()
         {
 

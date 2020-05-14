@@ -13,6 +13,7 @@ namespace Ncer.Camera
     {
         public override event CameraEventHandler OnCameraEvent;
         public override event CameraPreviewFrameHandler OnCameraPreviewEvent;
+        public override event CameraChangeHandler OnCameraStateChanged;
 
         #region 成员
         private Camera2Class camera;

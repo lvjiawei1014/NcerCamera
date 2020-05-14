@@ -16,7 +16,7 @@ namespace Ncer.Camera
 
         public override event CameraEventHandler OnCameraEvent;
         public override event CameraPreviewFrameHandler OnCameraPreviewEvent;
-
+        public override event CameraChangeHandler OnCameraStateChanged;
         public override bool Close()
         {
             throw new NotImplementedException();

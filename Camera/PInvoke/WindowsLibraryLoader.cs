@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace OpenCvSharp
+namespace Ncer.Camera
 {
     /// <summary>
     /// Handles loading embedded dlls into memory, based on http://stackoverflow.com/questions/666799/embedding-unmanaged-dll-into-a-managed-c-sharp-dll.
@@ -91,12 +91,12 @@ namespace OpenCvSharp
         /// <returns></returns>
         public bool IsCurrentPlatformSupported()
         {
-#if DOTNET_FRAMEWORK
+//#if DOTNET_FRAMEWORK
             return Environment.OSVersion.Platform == PlatformID.Win32NT ||
                 Environment.OSVersion.Platform == PlatformID.Win32Windows;
-#else
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-#endif
+//#else
+//            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+//#endif
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace OpenCvSharp
         /// </summary>
         /// <param name="dllName"></param>
         /// <param name="additionalPaths"></param>
-        public void LoadLibrary(string dllName, IEnumerable<string>? additionalPaths = null)
+        public void LoadLibrary(string dllName, IEnumerable<string> additionalPaths = null)
         {
             if (!IsCurrentPlatformSupported())
             {
@@ -112,7 +112,8 @@ namespace OpenCvSharp
             }
 
             if (additionalPaths == null)
-                additionalPaths = Array.Empty<string>();
+                //additionalPaths = Array.Empty<string>();
+                additionalPaths = new List<string>();
 
             try
             {
@@ -152,13 +153,7 @@ namespace OpenCvSharp
                     if (dllHandle != IntPtr.Zero) return;
 #endif
 
-                    // Gets the pathname of the base directory that the assembly resolver uses to probe for assemblies.
-                    // https://github.com/dotnet/corefx/issues/2221
-#if !NET40
-                    baseDirectory = AppContext.BaseDirectory;
-                    dllHandle = LoadLibraryInternal(dllName, baseDirectory, processArch);
-                    if (dllHandle != IntPtr.Zero) return;
-#endif
+
 
                     // Finally try the working directory
                     baseDirectory = Path.GetFullPath(Directory.GetCurrentDirectory());
@@ -238,7 +233,6 @@ namespace OpenCvSharp
             var platformName = GetPlatformName(processArchInfo.Architecture) ?? "";
             var expectedDllDirectory = Path.Combine(
                 Path.Combine(baseDirectory, DllDirectory), platformName);
-            //var fileName = FixUpDllFileName(Path.Combine(expectedDllDirectory, dllName));
 
             return LoadLibraryRaw(dllName, expectedDllDirectory);
         }
@@ -247,21 +241,6 @@ namespace OpenCvSharp
         {
             var libraryHandle = IntPtr.Zero;
             var fileName = FixUpDllFileName(Path.Combine(baseDirectory, dllName));
-
-#if WINRT && false
-            // MP! Note: This is a hack, needs refinement. We don't need to carry payload of both binaries for WinRT because the appx is platform specific.
-            ProcessArchitectureInfo processInfo = GetProcessArchitecture();
-
-            string cpu = "x86";
-            if (processInfo.Architecture == "AMD64")
-                cpu = "x64";
-
-            string dllpath = baseDirectory.Replace($"dll\\{cpu}", "");
-            fileName = $"{dllpath}{dllName}.dll";
-
-            // Show where we're trying to load the file from
-            Debug.WriteLine($"Trying to load native library \"{fileName}\"...");
-#endif
 
             if (File.Exists(fileName))
             {
@@ -306,21 +285,11 @@ namespace OpenCvSharp
         {
             if (!string.IsNullOrEmpty(fileName))
             {
-#if DOTNET_FRAMEWORK
-                var platformId = Environment.OSVersion.Platform;
-                if ((platformId == PlatformID.Win32S) ||
-                    (platformId == PlatformID.Win32Windows) ||
-                    (platformId == PlatformID.Win32NT) ||
-                    (platformId == PlatformID.WinCE))
-#else
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-#endif
+
+                if (!fileName.EndsWith(DllFileExtension,
+                        StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!fileName.EndsWith(DllFileExtension,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        return fileName + DllFileExtension;
-                    }
+                    return fileName + DllFileExtension;
                 }
             }
 
@@ -330,7 +299,7 @@ namespace OpenCvSharp
         /// <summary>
         /// Given the processor architecture, returns the name of the platform.
         /// </summary>
-        private string? GetPlatformName(string processorArchitecture)
+        private string GetPlatformName(string processorArchitecture)
         {
             if (string.IsNullOrEmpty(processorArchitecture))
                 return null;

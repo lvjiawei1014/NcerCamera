@@ -9,6 +9,11 @@ namespace Ncer.Camera
 {
     public abstract class Camera
     {
+        public delegate void CameraPreviewFrameHandler(object sender, Frame frame);
+
+        public delegate void CameraChangeHandler(object sender, CameraStateArgs cameraStateArgs);
+
+        public delegate void CameraEventHandler(object sender, CameraEventArgs cameraEventArgs);
         /// <summary>
         /// 相机事件
         /// </summary>
@@ -17,6 +22,8 @@ namespace Ncer.Camera
         /// 预览模式帧事件
         /// </summary>
         public abstract event CameraPreviewFrameHandler OnCameraPreviewEvent;
+
+        public abstract event CameraChangeHandler OnCameraStateChanged;
         #region 属性
         /// <summary>
         /// 分辨率 单张 抓拍
@@ -175,11 +182,7 @@ namespace Ncer.Camera
 
     }
 
-    public delegate void CameraPreviewFrameHandler(object sender, Frame frame);
 
-    public delegate void CameraChangeHandler(object sender, CameraStateArgs cameraStateArgs);
-
-    public delegate void CameraEventHandler(object sender, CameraEventArgs cameraEventArgs);
 
     public struct CameraStateArgs
     {

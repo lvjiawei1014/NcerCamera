@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Diagnostics.Contracts;
 using Microsoft.Win32.SafeHandles;
+using Ncer.Camera;
 #if !(NETFX_CORE || WINDOWS_UWP)
 using System.Security.Permissions;
 using System.Runtime.ConstrainedExecution;
@@ -18,44 +19,21 @@ using System.Runtime.ConstrainedExecution;
 */
 namespace ToupTek
 {
-    public class WindowsLibraryLoader
-    {
-        [Pure, DllImport("kernel32", CallingConvention = CallingConvention.Winapi,
-             SetLastError = true, CharSet = CharSet.Unicode, BestFitMapping = false, ThrowOnUnmappableChar = true)]
-        public static extern IntPtr LoadLibrary(string dllPath);
 
-        public const string DllExtern = "toupcam";
-        public static bool IsX64
-        {
-            get => (IntPtr.Size == 8);
-        }
-
-        public static string LibPath
-        {
-            get => IsX64 ? "dll/x64/toupcam.dll" : "dll/x86/toupcam.dll";
-        }
-
-
-        public static void Load()
-        {
-            LoadLibrary(WindowsLibraryLoader.LibPath);
-        }
-        static WindowsLibraryLoader()
-        {
-            Load();
-        }
-    }
 
 
 #if !(NETFX_CORE || WINDOWS_UWP)
     public class SafeHToupCamHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        public const string DllExtern = "toupcam";
+
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern void Toupcam_Close(IntPtr h);
 
         public SafeHToupCamHandle()
             : base(true)
         {
+            WindowsLibraryLoader.Instance.LoadLibrary(DllExtern, null);
         }
 
         [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
@@ -69,7 +47,7 @@ namespace ToupTek
 #else
     public class SafeHToupCamHandle : SafeHandle
     {
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern void Toupcam_Close(IntPtr h);
 
         public SafeHToupCamHandle()
@@ -92,6 +70,8 @@ namespace ToupTek
 
     public class ToupCam : IDisposable
     {
+        public const string DllExtern = "toupcam";
+
         [Flags]
         public enum eFLAG : uint
         {
@@ -254,33 +234,33 @@ namespace ToupTek
             public int left, top, right, bottom;
         };
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern IntPtr Toupcam_Version();
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern uint Toupcam_Enum(IntPtr ti);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern SafeHToupCamHandle Toupcam_Open([MarshalAs(UnmanagedType.LPWStr)] string id);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_StartPullModeWithWndMsg(SafeHToupCamHandle h, IntPtr hWnd, uint nMsg);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_StartPullModeWithCallback(SafeHToupCamHandle h, PTOUPCAM_EVENT_CALLBACK pEventCallback, IntPtr pCallbackCtx);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_PullImage(SafeHToupCamHandle h, IntPtr pImageData, int bits, out uint pnWidth, out uint pnHeight);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_PullStillImage(SafeHToupCamHandle h, IntPtr pImageData, int bits, out uint pnWidth, out uint pnHeight);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_PullImageWithRowPitch(SafeHToupCamHandle h, IntPtr pImageData, int bits, int rowPitch, out uint pnWidth, out uint pnHeight);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_PullStillImageWithRowPitch(SafeHToupCamHandle h, IntPtr pImageData, int bits, int rowPitch, out uint pnWidth, out uint pnHeight);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_StartPushMode(SafeHToupCamHandle h, PTOUPCAM_DATA_CALLBACK pDataCallback, IntPtr pCallbackCtx);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_Stop(SafeHToupCamHandle h);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_Pause(SafeHToupCamHandle h, int bPause);
         
         /* for still image snap */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_Snap(SafeHToupCamHandle h, uint nResolutionIndex);
         
         /*
@@ -289,24 +269,24 @@ namespace ToupTek
                         0:          cancel trigger
                         others:     number of images to be triggered
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_Trigger(SafeHToupCamHandle h, ushort nNumber);
         
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Size(SafeHToupCamHandle h, int nWidth, int nHeight);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Size(SafeHToupCamHandle h, out int nWidth, out int nHeight);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_eSize(SafeHToupCamHandle h, uint nResolutionIndex);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_eSize(SafeHToupCamHandle h, out uint nResolutionIndex);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern uint Toupcam_get_ResolutionNumber(SafeHToupCamHandle h);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern uint Toupcam_get_Resolution(SafeHToupCamHandle h, uint nResolutionIndex, out int pWidth, out int pHeight);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern uint Toupcam_get_ResolutionRatio(SafeHToupCamHandle h, uint nResolutionIndex, out int pNumerator, out int pDenominator);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern uint Toupcam_get_Field(SafeHToupCamHandle h);
         
         /*
@@ -318,33 +298,33 @@ namespace ToupTek
                 MAKEFOURCC('Y', 'U', 'Y', 'V')
                 MAKEFOURCC('Y', 'Y', 'Y', 'Y')
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern uint Toupcam_get_RawFormat(SafeHToupCamHandle h, out uint nFourCC, out uint bitdepth);
         
         /*
             set or get the process mode: TOUPCAM_PROCESSMODE_FULL or TOUPCAM_PROCESSMODE_FAST
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_ProcessMode(SafeHToupCamHandle h, ePROCESSMODE nProcessMode);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_ProcessMode(SafeHToupCamHandle h, out ePROCESSMODE pnProcessMode);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_RealTime(SafeHToupCamHandle h, int bEnable);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_RealTime(SafeHToupCamHandle h, out int bEnable);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_Flush(SafeHToupCamHandle h);
         
         /* sensor Temperature */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Temperature(SafeHToupCamHandle h, out short pTemperature);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Temperature(SafeHToupCamHandle h, short nTemperature);
         
         /* ROI */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Roi(SafeHToupCamHandle h, out uint pxOffset, out uint pyOffset, out uint pxWidth, out uint pyHeight);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Roi(SafeHToupCamHandle h, uint xOffset, uint yOffset, uint xWidth, uint yHeight);
         
         /*
@@ -363,87 +343,87 @@ namespace ToupTek
             | WBGain                  |   -127~127    |   0                   |
             ------------------------------------------------------------------|
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_AutoExpoEnable(SafeHToupCamHandle h, out int bAutoExposure);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_AutoExpoEnable(SafeHToupCamHandle h, int bAutoExposure);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_AutoExpoTarget(SafeHToupCamHandle h, out ushort Target);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_AutoExpoTarget(SafeHToupCamHandle h, ushort Target);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_MaxAutoExpoTimeAGain(SafeHToupCamHandle h, uint maxTime, ushort maxAGain);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_ExpoTime(SafeHToupCamHandle h, out uint Time)/* in microseconds */;
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_ExpoTime(SafeHToupCamHandle h, uint Time)/* inmicroseconds */;
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_ExpTimeRange(SafeHToupCamHandle h, out uint nMin, out uint nMax, out uint nDef);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_ExpoAGain(SafeHToupCamHandle h, out ushort AGain);/* percent, such as 300 */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_ExpoAGain(SafeHToupCamHandle h, ushort AGain);/* percent */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_ExpoAGainRange(SafeHToupCamHandle h, out ushort nMin, out ushort nMax, out ushort nDef);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_LevelRange(SafeHToupCamHandle h, [In] ushort[] aLow, [In] ushort[] aHigh);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_LevelRange(SafeHToupCamHandle h, [Out] ushort[] aLow, [Out] ushort[] aHigh);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Hue(SafeHToupCamHandle h, int Hue);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Hue(SafeHToupCamHandle h, out int Hue);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Saturation(SafeHToupCamHandle h, int Saturation);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Saturation(SafeHToupCamHandle h, out int Saturation);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Brightness(SafeHToupCamHandle h, int Brightness);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Brightness(SafeHToupCamHandle h, out int Brightness);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Contrast(SafeHToupCamHandle h, out int Contrast);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Contrast(SafeHToupCamHandle h, int Contrast);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Gamma(SafeHToupCamHandle h, out int Gamma);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Gamma(SafeHToupCamHandle h, int Gamma);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Chrome(SafeHToupCamHandle h, out int bChrome);    /* monochromatic mode */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Chrome(SafeHToupCamHandle h, int bChrome);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_VFlip(SafeHToupCamHandle h, out int bVFlip);  /* vertical flip */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_VFlip(SafeHToupCamHandle h, int bVFlip);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_HFlip(SafeHToupCamHandle h, out int bHFlip);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_HFlip(SafeHToupCamHandle h, int bHFlip);  /* horizontal flip */
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Negative(SafeHToupCamHandle h, out int bNegative);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Negative(SafeHToupCamHandle h, int bNegative);
         
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Speed(SafeHToupCamHandle h, ushort nSpeed);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Speed(SafeHToupCamHandle h, out ushort pSpeed);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern uint Toupcam_get_MaxSpeed(SafeHToupCamHandle h);/* get the maximum speed, "Frame Speed Level", speed range = [0, max] */
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern uint Toupcam_get_MaxBitDepth(SafeHToupCamHandle h);/* get the max bit depth of this camera, such as 8, 10, 12, 14, 16 */
         
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern uint Toupcam_get_FanMaxSpeed(SafeHToupCamHandle h);/* get the maximum fan speed, the fan speed range = [0, max], closed interval */
         
         /* power supply: 
@@ -451,78 +431,78 @@ namespace ToupTek
                 1 -> 50Hz AC
                 2 -> DC
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_HZ(SafeHToupCamHandle h, int nHZ);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_HZ(SafeHToupCamHandle h, out int nHZ);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Mode(SafeHToupCamHandle h, int bSkip); /* skip or bin */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Mode(SafeHToupCamHandle h, out int bSkip);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_TempTint(SafeHToupCamHandle h, int nTemp, int nTint);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_TempTint(SafeHToupCamHandle h, out int nTemp, out int nTint);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_WhiteBalanceGain(SafeHToupCamHandle h, [In] int[] aGain);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_WhiteBalanceGain(SafeHToupCamHandle h, [Out] int[] aGain);
         
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_AWBAuxRect(SafeHToupCamHandle h, ref RECT pAuxRect);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_AWBAuxRect(SafeHToupCamHandle h, out RECT pAuxRect);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_AEAuxRect(SafeHToupCamHandle h, ref RECT pAuxRect);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_AEAuxRect(SafeHToupCamHandle h, out RECT pAuxRect);
 
         /*
             S_FALSE:    color mode
             S_OK:       mono mode, such as EXCCD00300KMA and UHCCD01400KMA
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_MonoMode(SafeHToupCamHandle h);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern uint Toupcam_get_StillResolutionNumber(SafeHToupCamHandle h);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_StillResolution(SafeHToupCamHandle h, uint nResolutionIndex, out int pWidth, out int pHeight);
 
         /*
             get the serial number which is always 32 chars which is zero-terminated such as "TP110826145730ABCD1234FEDC56787"
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_SerialNumber(SafeHToupCamHandle h, IntPtr sn);
         
         /*
             get the camera firmware version, such as: 3.2.1.20140922
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_FwVersion(SafeHToupCamHandle h, IntPtr fwver);
         /*
             get the camera hardware version, such as: 3.2.1.20140922
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_HwVersion(SafeHToupCamHandle h, IntPtr hwver);
         /*
             get the FPGA version, such as: 1.3
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_FpgaVersion(SafeHToupCamHandle h, IntPtr fpgaver);
         /*
             get the production date, such as: 20150327
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_ProductionDate(SafeHToupCamHandle h, IntPtr pdate);
 
         /*
             get the sensor pixel size, such as: 2.4um
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_PixelSize(SafeHToupCamHandle h, uint nResolutionIndex, out float x, out float y);
         
         /*
@@ -533,63 +513,63 @@ namespace ToupTek
                     | VignetMidPoint    |   0~100       |   50                  |
                     -------------------------------------------------------------
         */
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_VignetEnable(SafeHToupCamHandle h, int bEnable);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_VignetEnable(SafeHToupCamHandle h, out int bEnable);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_VignetAmountInt(SafeHToupCamHandle h, int nAmount);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_VignetAmountInt(SafeHToupCamHandle h, out int nAmount);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_VignetMidPointInt(SafeHToupCamHandle h, int nMidPoint);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_VignetMidPointInt(SafeHToupCamHandle h, out int nMidPoint);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_ExpoCallback(SafeHToupCamHandle h, PITOUPCAM_EXPOSURE_CALLBACK fnExpoProc, IntPtr pExpoCtx);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_ChromeCallback(SafeHToupCamHandle h, PITOUPCAM_CHROME_CALLBACK fnChromeProc, IntPtr pChromeCtx);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_AwbOnePush(SafeHToupCamHandle h, PITOUPCAM_TEMPTINT_CALLBACK fnTTProc, IntPtr pTTCtx);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_AwbInit(SafeHToupCamHandle h, PITOUPCAM_WHITEBALANCE_CALLBACK fnWBProc, IntPtr pWBCtx);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_LevelRangeAuto(SafeHToupCamHandle h);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_GetHistogram(SafeHToupCamHandle h, PITOUPCAM_HISTOGRAM_CALLBACK fnHistogramProc, IntPtr pHistogramCtx);
         
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_LEDState(SafeHToupCamHandle h, ushort iLed, ushort iState, ushort iPeriod);
         
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_write_EEPROM(SafeHToupCamHandle h, uint addr, IntPtr pBuffer, uint nBufferLen);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_read_EEPROM(SafeHToupCamHandle h, uint addr, IntPtr pBuffer, uint nBufferLen);
         
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_write_UART(SafeHToupCamHandle h, IntPtr pBuffer, uint nBufferLen);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_read_UART(SafeHToupCamHandle h, IntPtr pBuffer, uint nBufferLen);
         
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Option(SafeHToupCamHandle h, eOPTION iOption, int iValue);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_Option(SafeHToupCamHandle h, eOPTION iOption, out int iValue);
 
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Linear(SafeHToupCamHandle h, byte[] v8, ushort[] v16);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_Curve(SafeHToupCamHandle h, byte[] v8, ushort[] v16);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_ColorMatrix(SafeHToupCamHandle h, double[] v);
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_put_WBGain(SafeHToupCamHandle h, ushort[] v);
         
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int Toupcam_get_FrameRate(SafeHToupCamHandle h, out uint nFrame, out uint nTime, out uint nTotalFrame);
         
-        [DllImport(WindowsLibraryLoader.DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        [DllImport(DllExtern, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern double Toupcam_calc_ClarityFactor(IntPtr pImageData, int bits, uint nImgWidth, uint nImgHeight);
         
         static public uint MAKEFOURCC(uint a, uint b, uint c, uint d)
@@ -773,6 +753,11 @@ namespace ToupTek
                     pthis.HistogramCallback(arrHistY, arrHistR, arrHistG, arrHistB);
                 }
             }
+        }
+
+        public ToupCam()
+        {
+            WindowsLibraryLoader.Instance.LoadLibrary(DllExtern, null);
         }
 
         ~ToupCam()
