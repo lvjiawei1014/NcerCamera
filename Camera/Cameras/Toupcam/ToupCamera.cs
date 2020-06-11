@@ -148,6 +148,7 @@ namespace Ncer.Camera
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
                 camera.PullImage(frame.Data, 16, out w, out h);
+                frame.ExposureTime = this.expoTime;
                 stopwatch.Stop();
                 System.Console.WriteLine("pullimage:" + stopwatch.ElapsedMilliseconds);
 

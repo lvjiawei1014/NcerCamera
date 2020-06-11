@@ -13,7 +13,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Ncer.Camera;
-using Ncer.Camera.Toupcam;
 using OpenCvSharp;
 using ImageProcessToolkit;
 using System.Diagnostics;
@@ -57,7 +56,7 @@ namespace CameraDemo
         {
             this.Dispatcher.Invoke(() =>
             {
-                MatImage image = MatImage.CreateFromPtr(frame.Width, frame.Height, MatType.CV_16SC1, frame.Data);
+                MatImage image = MatImage.CreateFromPtr(frame.Width, frame.Height, MatType.CV_16UC1, frame.Data);
                 var img = Utils.MatToImageSource(image.Mat);
                 this.imageMain.Source = img.Clone();
 
