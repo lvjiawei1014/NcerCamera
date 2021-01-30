@@ -20,6 +20,10 @@
         <Button x:Name="btnStopPreview" Content="StopPreview" HorizontalAlignment="Left" Margin="10,82,0,0" VerticalAlignment="Top" Width="123" Click="btnStopPreview_Click" />
         <Button x:Name="btnReset" Content="ReSet" HorizontalAlignment="Left" Margin="10,106,0,0" VerticalAlignment="Top" Width="123" Click="btnReset_Click" />
         <Button x:Name="btnInitToup" Content="InitToupCamera" HorizontalAlignment="Left" Margin="10,147,0,0" VerticalAlignment="Top" Width="123" Click="btnInitToup_Click"/>
+        <TextBox x:Name="tbExposure" HorizontalAlignment="Left" Height="23" Margin="10,181,0,0" TextWrapping="Wrap" Text="" InputScope="Number" VerticalAlignment="Top" Width="123"/>
+        <Button x:Name="btnSetExposure" Content="Set exposure" HorizontalAlignment="Left" Margin="40,209,0,0" VerticalAlignment="Top" Width="93" Click="btnSetExposure_Click"/>
+        <CheckBox x:Name="ckHFilp" Checked="ckHFilp_Checked" Unchecked="ckHFilp_Unchecked" Content="水平翻转" HorizontalAlignment="Left" Margin="57,242,0,0" VerticalAlignment="Top"   />
+        <CheckBox x:Name="ckVFlip" Checked="ckVFlip_Checked" Unchecked="ckVFlip_Unchecked" Content="竖直翻转" HorizontalAlignment="Left" Margin="57,262,0,0" VerticalAlignment="Top" />
 
     </Grid>
 </Window>

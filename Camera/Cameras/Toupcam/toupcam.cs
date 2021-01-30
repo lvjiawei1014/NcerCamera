@@ -9,7 +9,7 @@ using System.Runtime.ConstrainedExecution;
 #endif
 
 /*
-    Versin: 17.10121.20171030
+    Version: 17.10121.20171030
     
     For Microsoft .NET Framework.
     

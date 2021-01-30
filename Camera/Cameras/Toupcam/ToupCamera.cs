@@ -41,10 +41,19 @@ namespace Ncer.Camera
         private bool isPreview;
         private ToupCamera_Status status = ToupCamera_Status.Toup_Status_Idle;
 
-        public override double MinExposure => this.minExpo;
-        public override double MaxExposure => this.maxExpo;
+        public override bool DefaultHFlip { get; set; } = false;
+        public override bool DefaultVFlip { get; set; } = true;
+
         /// <summary>
-        /// 曝光时间
+        /// ms
+        /// </summary>
+        public override double MinExposure => this.minExpo/1000;
+        /// <summary>
+        /// ms
+        /// </summary>
+        public override double MaxExposure => this.maxExpo/1000;
+        /// <summary>
+        /// 曝光时间 ms
         /// </summary>
         public override double ExposureTime
         {
@@ -111,6 +120,7 @@ namespace Ncer.Camera
             switch (ev)
             {
                 case ToupCam.eEVENT.EVENT_EXPOSURE:
+                    OnExposureChanged();
                     break;
                 case ToupCam.eEVENT.EVENT_TEMPTINT:
                     break;
@@ -149,8 +159,9 @@ namespace Ncer.Camera
                 stopwatch.Start();
                 camera.PullImage(frame.Data, 16, out w, out h);
                 frame.ExposureTime = this.expoTime;
+                frame.Time = DateTime.Now;
                 stopwatch.Stop();
-                System.Console.WriteLine("pullimage:" + stopwatch.ElapsedMilliseconds);
+                //System.Console.WriteLine("pullimage:" + stopwatch.ElapsedMilliseconds);
 
                 if (status == ToupCamera_Status.Toup_Status_Exposing)
                 {
@@ -177,6 +188,12 @@ namespace Ncer.Camera
         {
             System.Console.WriteLine("EVENT_STILLIMAGE");
             this.status = ToupCamera_Status.Toup_Status_ImageReady;
+        }
+
+        private void OnExposureChanged()
+        {
+            camera.get_ExpoTime(out var expo);
+            System.Console.WriteLine("EVENT_EXPOSURE:"+expo);
         }
 
 
@@ -227,6 +244,11 @@ namespace Ncer.Camera
                 {
                     throw new Exception("设置最高位深度失败");
                 }
+                if (camera.put_HFlip(DefaultHFlip) == false || camera.put_VFlip(DefaultVFlip) == false)
+                {
+                    throw new Exception("设置默认翻转失败");
+                }
+
                 //still
                 this.stillResolutions.Clear();
                 var stillResoNum = camera.StillResolutionNumber;
@@ -366,6 +388,7 @@ namespace Ncer.Camera
                 this.IsStarted = ret;
                 this.CameraStatus = CameraStatus.Idle;
                 status = ToupCamera_Status.Toup_Status_Idle;
+
                 //分配缓存帧
                 this.frame = new Frame(this.previewResolution.width, this.previewResolution.height, this.PixelFormat);
                 this.frame.Allocate();
@@ -409,42 +432,44 @@ namespace Ncer.Camera
 
         #endregion
         #region 参数获取和配置
-        public override bool GetHFlip(bool flip)
+        public override bool GetHFlip(out bool flip)
         {
-            bool flip_;
-            var ret = camera.get_HFlip(out flip_);
+            var ret = camera.get_HFlip(out var flip_);
             if (ret)
             {
-                flip = flip_;return true;
+                flip = DefaultHFlip ? !flip_ : flip_;
+                return true;
             }
             else
             {
+                flip = false;
                 return false;
             }
         }
 
         public override bool SetHFlip(bool flip)
         {
-            return camera.put_HFlip(flip);
+            return camera.put_HFlip(DefaultHFlip? !flip:flip);
         }
 
-        public override bool GetVFlip(bool flip)
+        public override bool GetVFlip(out bool flip)
         {
-            bool flip_;
-            var ret = camera.get_VFlip(out flip_);
+            var ret = camera.get_VFlip(out var flip_);
             if (ret)
             {
-                flip = flip_; return true;
+                flip = DefaultVFlip ? !flip_ : flip_;
+                return true;
             }
             else
             {
+                flip = false;
                 return false;
             }
         }
 
         public override bool SetVFlip(bool flip)
         {
-            return camera.put_VFlip(flip);
+            return camera.put_VFlip(DefaultVFlip ? !flip : flip);
         }
 
         public override bool SetGain(double gain)

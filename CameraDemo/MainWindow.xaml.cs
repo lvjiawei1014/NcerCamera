@@ -121,7 +121,7 @@ namespace CameraDemo
             this.camera = new ToupCamera();
             try
             {
-                camera.Init();
+                (camera as ToupCamera).Init();
                 camera.OnCameraPreviewEvent += Camera_OnCameraPreviewEvent;
                 txtInfo.Text = camera.CameraModel + "\r\n";
                 txtInfo.Text += camera.PixelSize.pixelSizeX.ToString() + "\r\n";
@@ -138,6 +138,40 @@ namespace CameraDemo
             {
                 MessageBox.Show(ex.Message);
             }
+        }
+
+        private void btnSetExposure_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                double expo = double.Parse(tbExposure.Text);
+                camera.ExposureTime = expo;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
+
+        private void ckHFilp_Checked(object sender, RoutedEventArgs e)
+        {
+            camera.SetHFlip(true);
+        }
+
+        private void ckHFilp_Unchecked(object sender, RoutedEventArgs e)
+        {
+            camera.SetHFlip(false);
+
+        }
+
+        private void ckVFlip_Checked(object sender, RoutedEventArgs e)
+        {
+            camera.SetVFlip(true);
+        }
+
+        private void ckVFlip_Unchecked(object sender, RoutedEventArgs e)
+        {
+            camera.SetVFlip(false);
         }
     }
 }

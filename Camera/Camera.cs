@@ -31,6 +31,9 @@ namespace Ncer.Camera
         protected Resolution resolution;
         protected Resolution previewResolution;
 
+        public virtual bool DefaultVFlip { get; set; }
+        public virtual bool DefaultHFlip { get; set; }
+
         public abstract double MinExposure { get; }
 
         public abstract double MaxExposure { get; }
@@ -76,9 +79,13 @@ namespace Ncer.Camera
         /// </summary>
         public abstract bool IsStarted { get; protected set; }
 
+        public virtual double Temperature { get; } = double.NaN;
+
+        public virtual double TargetTemperature { get; set; } = double.NaN;
+        public virtual double BackoffTemperature { get; set; } = double.NaN;
+
 
         #endregion
-
         #region 生命周期 和状态
         /// <summary>
         /// 初始化相机连接
@@ -97,7 +104,6 @@ namespace Ncer.Camera
 
 
         #endregion
-
         #region 图像获取
         /// <summary>
         /// 获取一帧图像
@@ -112,7 +118,6 @@ namespace Ncer.Camera
         public abstract bool StopPreview();
 
         #endregion
-
         #region 参数获取和设置
         /// <summary>
         /// 设置相机模式
@@ -161,8 +166,9 @@ namespace Ncer.Camera
             return false;
         }
 
-        public virtual bool GetVFlip(bool flip)
+        public virtual bool GetVFlip(out bool flip)
         {
+            flip = false;
             return false;
         }
 
@@ -171,15 +177,44 @@ namespace Ncer.Camera
             return false;
         }
 
-        public virtual bool GetHFlip(bool flip)
+        public virtual bool GetHFlip(out bool flip)
         {
+            flip = false;
             return false;
         }
 
 
         #endregion
+        #region Cooler
+        /// <summary>
+        /// 获取当前温度
+        /// </summary>
+        /// <returns></returns>
+        public virtual double GetTemperature()
+        {
+            return double.NaN;
+        }
 
 
+        #endregion
+        #region Cooler
+
+        public virtual bool GetCoolerEnable()
+        {
+            return true;
+        }
+
+        #endregion
+        #region Cooler
+
+        public virtual void SetCoolerEnable(bool enable)
+        {
+            
+
+        }
+
+
+        #endregion
     }
 
 
@@ -207,7 +242,7 @@ namespace Ncer.Camera
         public int Height { get => height; set => height = value; }
         public double ExposureTime { get => exposureTime; set => exposureTime = value; }
         public IntPtr Data { get => data; set => data = value; }
-
+        public DateTime Time { get; set; }
         public Frame()
         {
 

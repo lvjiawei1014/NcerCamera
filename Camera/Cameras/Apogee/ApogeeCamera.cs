@@ -9,6 +9,9 @@ using System.Threading;
 
 namespace Ncer.Camera
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class ApogeeCamera : Camera
     {
         public override event CameraEventHandler OnCameraEvent;
@@ -23,6 +26,9 @@ namespace Ncer.Camera
         private Thread imagingThread;
         private bool isStart;
         private bool isStoppingPreview;
+        /// <summary>
+        /// 毫秒
+        /// </summary>
         private double expoTime;
 
 
@@ -31,14 +37,16 @@ namespace Ncer.Camera
         public Camera2Class Camera { get => camera; set => camera = value; }
         public override PixelSize PixelSize { get; protected set; }
         public Frame Frame { get => frame; set => frame = value; }
-
+        /// <summary>
+        /// 毫秒
+        /// </summary>
         public override double MinExposure
         {
             get
             {
                 try
                 {
-                    return camera.MinExposure;
+                    return camera.MinExposure*1000;
                 }
                 catch (Exception)
                 {
@@ -46,14 +54,16 @@ namespace Ncer.Camera
                 }
             }
         }
-
+        /// <summary>
+        /// 毫秒
+        /// </summary>
         public override double MaxExposure
         {
             get
             {
                 try
                 {
-                    return camera.MaxExposure;
+                    return camera.MaxExposure*1000;
                 }
                 catch (Exception)
                 {
@@ -63,7 +73,9 @@ namespace Ncer.Camera
         }
 
         public override bool IsStarted { get => isStart; protected set => isStart = value; }
-
+        /// <summary>
+        /// 毫秒 
+        /// </summary>
         public override double ExposureTime
         {
             get => expoTime; set
@@ -84,6 +96,40 @@ namespace Ncer.Camera
                 }
             }
         }
+
+        public override double TargetTemperature
+        {
+            get
+            {
+                return camera==null?double.NaN:camera.CoolerSetPoint;
+            }
+
+            set
+            {
+                if (camera != null)
+                {
+                    camera.CoolerSetPoint = value;
+                }
+            }
+        }
+
+        public override double BackoffTemperature
+        {
+            get
+            {
+                return camera == null ? double.NaN : camera.CoolerBackoffPoint;// base.BackoffTemperature;
+            }
+
+            set
+            {
+                if (camera != null)
+                {
+                    camera.CoolerBackoffPoint = value;
+                }
+            }
+        }
+
+        public override double Temperature => camera == null ? double.NaN : camera.TempCCD;
 
         #endregion
         #region 状态管理
@@ -116,7 +162,7 @@ namespace Ncer.Camera
                 this.frame = new Frame(this.resolution.width, this.resolution.height, PixelFormat.Mono16);
                 this.frame.Allocate();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 this.OnCameraEvent?.Invoke(this, new CameraEventArgs()
                 {
@@ -189,22 +235,12 @@ namespace Ncer.Camera
 
         public override Resolution GetResolution()
         {
-            var row = this.camera.ImagingRows;
-            var col = this.camera.ImagingColumns;
-            return new Resolution(col, row);
+            return this.resolution;
         }
 
         public override List<Resolution> GetResolutions()
         {
-            try
-            {
-                return new List<Resolution>() { new Resolution(camera.ImagingColumns, camera.ImagingRows) };
-
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return this.resolution==null? new List<Resolution>(): new List<Resolution>() { this.resolution };
         }
 
 
@@ -243,8 +279,16 @@ namespace Ncer.Camera
             {
                 if (this.cameraMode == CameraMode.Preview)
                 {
-                    var frame = this.TakeImage();
-                    this.OnCameraPreviewEvent?.Invoke(this, frame);
+                    var frame = this.NextFrame();
+                    if (frame == null)
+                    {
+                        this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.PreviewError });
+                    }
+                    else
+                    {
+                        this.OnCameraPreviewEvent?.Invoke(this, frame);
+
+                    }
                 }
                 if (this.isStoppingPreview)
                 {
@@ -258,52 +302,13 @@ namespace Ncer.Camera
             
         }
 
+        //获取下一帧图像//
         private Frame NextFrame()
         {
-            try
-            {
-                var expo = this.ExposureTime;
-                int interval = Math.Max(1, Math.Min(100, (int)(expo / 10)));
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                this.camera.Expose(expo / 1000.0, false);//
-                DateTime startTime = DateTime.Now;
-                if (expo > 500)
-                {
-                    System.Threading.Thread.Sleep((int)(expo - 500));
-                }
-                while (DateTime.Now.Subtract(startTime).TotalMilliseconds < 2 * this.ExposureTime)
-                {
-                    if (camera.ImagingStatus == Apn_Status.Apn_Status_ImageReady)
-                    {
-
-                        System.Console.WriteLine("new frame:" + sw.ElapsedMilliseconds + "ms");
-                        Frame frame = this.frame;
-                        frame.ExposureTime = expo;
-                        camera.GetImage(frame.Data.ToInt32());
-                        return frame;
-                    }
-                    System.Console.WriteLine("wait frame");
-                    System.Threading.Thread.Sleep(interval);
-                }
-                System.Console.WriteLine("wait frame timeout");
-                this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ImagingError });
-                return null;
-            }
-            catch (Exception ex)
-            {
-                this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ImagingError, Message = ex.Message });
-                return null;
-            }
-        }
-
-        public override async Task<Frame> TakeImageAsync()
-        {
-            var f=await Task.Run<Frame>(() =>
+            lock (this)
             {
                 try
                 {
-                    this.cameraMode = CameraMode.Single;
                     var expo = this.ExposureTime;
                     int interval = Math.Max(1, Math.Min(100, (int)(expo / 10)));
                     Stopwatch sw = new Stopwatch();
@@ -318,9 +323,9 @@ namespace Ncer.Camera
                     {
                         if (camera.ImagingStatus == Apn_Status.Apn_Status_ImageReady)
                         {
-
                             System.Console.WriteLine("new frame:" + sw.ElapsedMilliseconds + "ms");
                             Frame frame = this.frame;
+                            frame.Time = DateTime.Now;
                             frame.ExposureTime = expo;
                             camera.GetImage(frame.Data.ToInt32());
                             return frame;
@@ -329,77 +334,141 @@ namespace Ncer.Camera
                         System.Threading.Thread.Sleep(interval);
                     }
                     System.Console.WriteLine("wait frame timeout");
-                    this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ImagingError });
-                    return null;
+                    throw new Exception("Wait frame time out!");
                 }
                 catch (Exception ex)
                 {
                     this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ImagingError, Message = ex.Message });
                     return null;
                 }
+            }
+            
+        }
+
+        public override async Task<Frame> TakeImageAsync()
+        {
+            return await Task.Run<Frame>(() =>
+            {
+                return this.TakeImage();
+                //try
+                //{
+                //    this.cameraMode = CameraMode.Single;
+                //    var expo = this.ExposureTime;
+                //    int interval = Math.Max(1, Math.Min(100, (int)(expo / 10)));
+                //    Stopwatch sw = new Stopwatch();
+                //    sw.Start();
+                //    this.camera.Expose(expo / 1000.0, false);//
+                //    DateTime startTime = DateTime.Now;
+                //    if (expo > 500)
+                //    {
+                //        System.Threading.Thread.Sleep((int)(expo - 500));
+                //    }
+                //    while (DateTime.Now.Subtract(startTime).TotalMilliseconds < 2 * this.ExposureTime)
+                //    {
+                //        if (camera.ImagingStatus == Apn_Status.Apn_Status_ImageReady)
+                //        {
+
+                //            System.Console.WriteLine("new frame:" + sw.ElapsedMilliseconds + "ms");
+                //            Frame frame = this.frame;
+                //            frame.ExposureTime = expo;
+                //            camera.GetImage(frame.Data.ToInt32());
+                //            return frame;
+                //        }
+                //        System.Console.WriteLine("wait frame");
+                //        System.Threading.Thread.Sleep(interval);
+                //    }
+                //    System.Console.WriteLine("wait frame timeout");
+                //    this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ImagingError });
+                //    return null;
+                //}
+                //catch (Exception ex)
+                //{
+                //    this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ImagingError, Message = ex.Message });
+                //    return null;
+                //}
             });
-            return f;
         }
 
 
         public override Frame TakeImage()
         {
-            try
-            {
-                var expo = this.ExposureTime;
-                int interval = Math.Max(1, Math.Min(100, (int)(expo / 10)));
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                this.camera.Expose(expo / 1000.0, false);//
-                DateTime startTime = DateTime.Now;
-                if (expo > 500)
-                {
-                    System.Threading.Thread.Sleep((int)(expo - 500));
-                }
-                while (DateTime.Now.Subtract(startTime).TotalMilliseconds < 2 * this.ExposureTime)
-                {
-                    if (camera.ImagingStatus == Apn_Status.Apn_Status_ImageReady)
-                    {
 
-                        System.Console.WriteLine("new frame:"+sw.ElapsedMilliseconds+"ms");
-                        Frame frame = this.frame;
-                        frame.ExposureTime = expo;
-                        camera.GetImage(frame.Data.ToInt32());
-                        return frame;
-                    }
-                    System.Console.WriteLine("wait frame");
-                    System.Threading.Thread.Sleep(interval);
-                }
-                System.Console.WriteLine("wait frame timeout");
-                this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ImagingError });
-                return null;
-            }
-            catch (Exception ex)
+
+            var ret = this.NextFrame();
+            if (ret == null)
             {
-                this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ImagingError, Message = ex.Message });
                 return null;
             }
+            else
+            {
+                return (Frame)ret.Clone();
+            }
+
+            //try
+            //{
+            //    var expo = this.ExposureTime;
+            //    int interval = Math.Max(1, Math.Min(100, (int)(expo / 10)));
+            //    Stopwatch sw = new Stopwatch();
+            //    sw.Start();
+            //    this.camera.Expose(expo / 1000.0, false);//
+            //    DateTime startTime = DateTime.Now;
+            //    if (expo > 500)
+            //    {
+            //        System.Threading.Thread.Sleep((int)(expo - 500));
+            //    }
+            //    while (DateTime.Now.Subtract(startTime).TotalMilliseconds < 2 * this.ExposureTime)
+            //    {
+            //        if (camera.ImagingStatus == Apn_Status.Apn_Status_ImageReady)
+            //        {
+
+            //            System.Console.WriteLine("new frame:"+sw.ElapsedMilliseconds+"ms");
+            //            Frame frame = this.frame;
+            //            frame.ExposureTime = expo;
+            //            camera.GetImage(frame.Data.ToInt32());
+            //            return frame;
+            //        }
+            //        System.Console.WriteLine("wait frame");
+            //        System.Threading.Thread.Sleep(interval);
+            //    }
+            //    System.Console.WriteLine("wait frame timeout");
+            //    this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ImagingError });
+            //    return null;
+            //}
+            //catch (Exception ex)
+            //{
+            //    this.OnCameraEvent?.Invoke(this, new CameraEventArgs() { CameraEvent = CameraEvent.ImagingError, Message = ex.Message });
+            //    return null;
+            //}
 
         }
-
 
         #endregion
         #region Cooler
-        /// <summary>
-        /// 获取当前温度
-        /// </summary>
-        /// <returns></returns>
-        public double GetTemperature()
+        public override bool GetCoolerEnable()
         {
             try
             {
-                return camera.TempCCD;
+                return camera.CoolerEnable;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return double.NaN;
+                return false;
             }
         }
+
+        public override void SetCoolerEnable(bool enable)
+        {
+            try
+            {
+                camera.CoolerEnable = enable;
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+
         #endregion
 
         public override bool StartPreview()
@@ -456,7 +525,7 @@ namespace Ncer.Camera
                     throw new Exception("Camera alreay started;");
                 }
                 imagingThread = new Thread(this.ImaingTask);
-                imagingThread.IsBackground = false;
+                imagingThread.IsBackground = true;
                 imagingThread.Start();
                 IsStarted = true;
             }
@@ -499,17 +568,29 @@ namespace Ncer.Camera
 
         public override Resolution GetPreviewResolution()
         {
-            throw new NotImplementedException();
+            return this.GetResolution();
         }
 
         public override bool SetPreviewResolution(Resolution resolution)
         {
-            throw new NotImplementedException();
+            return resolution.Equals(this.resolution);
         }
 
         public override List<Resolution> GetPreviewResolutions()
         {
-            throw new NotImplementedException();
+            return GetResolutions();
+        }
+
+        public override double GetTemperature()
+        {
+            try
+            {
+                return camera.TempCCD;
+            }
+            catch (Exception)
+            {
+                return double.NaN;
+            }
         }
     }
 }

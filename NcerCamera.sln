@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Camera", "Camera\Camera.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraDemo", "CameraDemo\CameraDemo.csproj", "{98BA395A-D240-41F0-A137-54854A7F9BDE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageProcessToolkit", "..\GitHub\ImageProcessToolkit\ImageProcessToolkit\ImageProcessToolkit.csproj", "{27C8E4B7-ED59-43AD-859F-2C8363A58034}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,18 @@ Global
 		{98BA395A-D240-41F0-A137-54854A7F9BDE}.Release|x64.Build.0 = Release|x64
 		{98BA395A-D240-41F0-A137-54854A7F9BDE}.Release|x86.ActiveCfg = Release|x86
 		{98BA395A-D240-41F0-A137-54854A7F9BDE}.Release|x86.Build.0 = Release|x86
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Debug|x64.ActiveCfg = Debug|x64
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Debug|x64.Build.0 = Debug|x64
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Debug|x86.Build.0 = Debug|Any CPU
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Release|x64.ActiveCfg = Release|x64
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Release|x64.Build.0 = Release|x64
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Release|x86.ActiveCfg = Release|Any CPU
+		{27C8E4B7-ED59-43AD-859F-2C8363A58034}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
