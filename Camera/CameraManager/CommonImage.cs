@@ -27,7 +27,10 @@ namespace Ncer.Camera
 
 
         public string Path { get => path; set => path = value; }
-        public int Depth { get => depth; set => depth = value; }
+        /// <summary>
+        /// 表示实际存储数据的深度
+        /// </summary>
+        public int DataDepth { get => depth; set => depth = value; }
         public double Max { get => max; set => max = value; }
         public double Min { get => min; set => min = value; }
         public double SignalLevel { get => signalLevel; set => signalLevel = value; }

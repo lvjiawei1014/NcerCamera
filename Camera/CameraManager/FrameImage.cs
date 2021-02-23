@@ -1,5 +1,6 @@
 ﻿using OpenCvSharp;
 using Ncer.Camera;
+using System;
 
 namespace Ncer.Camera
 {
@@ -23,7 +24,7 @@ namespace Ncer.Camera
         /// <param name="frame"></param>
         /// <param name="copy"></param>
         /// <returns></returns>
-        public static FrameImage CreateImageFromFrame(Frame frame, bool copy = true)
+        public static FrameImage CreateImageFromFrame(Frame frame, bool copy = true,bool depthExtend=false)
         {
             if (frame == null) return null;
             FrameImage image = new FrameImage();
@@ -65,7 +66,15 @@ namespace Ncer.Camera
             }
             Mat mat = new Mat(image.frame.Height, image.frame.Width, matType, image.frame.Data);
             image.Mat = mat;
-            image.Depth = depth;
+            if (depthExtend && image.Depth - depth>0)
+            {
+                image.Mat *= (int)(Math.Pow(2, image.Depth - depth));
+                image.DataDepth = image.Depth;
+            }
+            else
+            {
+                image.DataDepth = depth;
+            }
             image.Exposure = frame.ExposureTime;
             image.UserData.Add("Exposure", frame.ExposureTime);
             return image;

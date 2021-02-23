@@ -1,9 +1,6 @@
 ﻿using OpenCvSharp;
 using System;
 using System.Threading.Tasks;
-using System.Runtime.InteropServices;
-using Ncer.Camera;
-using System.Collections.Generic;
 using log4net;
 using System.Diagnostics;
 using Ncer.Camera.FrameFrocess;
@@ -44,6 +41,10 @@ namespace Ncer.Camera
 
         #endregion
         #region 属性
+        /// <summary>
+        /// 是否自动扩展图像的深度 如将12bit 14bit 的图像 扩展到16bit 便于显示
+        /// </summary>
+        public bool DepthExtend { get; set; } = false;
         public bool CancelTakeFlag { get; set; }
         public bool IsTakeCaneled { get; set; }
         public double PreviewModeGain { get; set; } = 1;
@@ -279,7 +280,7 @@ namespace Ncer.Camera
                 var frame = await camera.TakeImageAsync();
                 if (frame == null) throw new Exception("Fail to take image!");
                 frame.ExposureTime = camera.ExposureTime;
-                frameImage = FrameImage.CreateImageFromFrame(frame, false);
+                frameImage = FrameImage.CreateImageFromFrame(frame, false,this.DepthExtend);
                 //旋转和翻转
                 FlipAndRotation(frameImage);
                 PretreatmentFrame(frameImage);
@@ -560,8 +561,7 @@ namespace Ncer.Camera
 
         private void Camera_OnCameraPreviewEvent(object sender, Frame frame)
         {
-
-            FrameImage frameImage = FrameImage.CreateImageFromFrame(frame, false);
+            FrameImage frameImage = FrameImage.CreateImageFromFrame(frame, false,this.DepthExtend);
             //旋转和翻转
             FlipAndRotation(frameImage);
             PretreatmentFrame(frameImage);

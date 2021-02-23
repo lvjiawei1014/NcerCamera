@@ -25,7 +25,7 @@ namespace Ncer.Camera
             image.Max = max;
             image.MaxPoint = maxPoint;
             image.MinPoint = minPoint;
-            level = Math.Min(1, max / Math.Pow(2, image.Depth));
+            level = Math.Min(1, max / Math.Pow(2, image.DataDepth));
             image.SignalLevel = level;
             return level;
         }
